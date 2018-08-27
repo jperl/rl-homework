@@ -92,8 +92,7 @@ def main():
 
         for epoch in range(args.num_epochs):
             # decay beta over epochs
-            beta = min(2 / np.sqrt(epoch + 1), 1)
-
+            beta = min(3 / np.sqrt(epoch + 1), 1)
             print('epoch', epoch, 'beta', beta)
 
             obs = env.reset()
@@ -110,9 +109,6 @@ def main():
                   actions.append(action)
 
                 obs, r, done, _ = env.step(action)
-
-                if args.render:
-                    env.render()
 
             train_x, train_y = np.array(observations), np.array(actions)[:,0,:]
             model.fit(train_x, train_y)
