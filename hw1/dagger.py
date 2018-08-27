@@ -59,10 +59,10 @@ def main():
     parser.add_argument('expert_policy_file', type=str)
     parser.add_argument('envname', type=str)
     parser.add_argument("--max_timesteps", type=int)
-    parser.add_argument('--num_epochs', type=int, default=20)
+    parser.add_argument('--num_epochs', type=int, default=50)
     parser.add_argument('--num_rollouts', type=int, default=20)
     parser.add_argument('--render', action='store_true')
-    parser.add_argument('--train_epochs', type=int, default=5)
+    parser.add_argument('--train_epochs', type=int, default=1)
     args = parser.parse_args()
 
     print('loading and building expert policy')
@@ -92,7 +92,7 @@ def main():
         returns = []
         for epoch in range(args.num_epochs):
             # decay beta over epochs
-            beta = 1 / np.cbrt(epoch + 1)
+            beta = 1 / np.sqrt(epoch + 1)
 
             print('epoch', epoch, 'beta', beta)
 
@@ -121,7 +121,7 @@ def main():
                     if steps >= max_steps:
                         break
 
-            model.fit(np.array(observations)[-2500:], np.array(actions)[-2500:, 0, :], epochs=args.train_epochs)
+            model.fit(np.array(observations)[-5000:], np.array(actions)[-5000:, 0, :], epochs=args.train_epochs)
             rollout(args, env, model)
 
 
