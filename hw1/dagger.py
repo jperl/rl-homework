@@ -60,7 +60,7 @@ def main():
     parser.add_argument('envname', type=str)
     parser.add_argument("--max_timesteps", type=int)
     parser.add_argument('--num_epochs', type=int, default=20)
-    parser.add_argument('--num_rollouts', type=int, default=20)
+    parser.add_argument('--num_rollouts', type=int, default=5)
     parser.add_argument('--render', action='store_true')
     args = parser.parse_args()
 
@@ -80,7 +80,7 @@ def main():
         model = build_model(num_actions=actions_shape[-1])
 
         # train on the observations
-        observations, actions = expert_data['observations'][:2500].tolist(), expert_data['actions'][:2500].tolist()
+        observations, actions = expert_data['observations'].tolist(), expert_data['actions'].tolist()
         model.fit(np.array(observations), np.array(actions)[:, 0, :])
 
         import gym
@@ -92,7 +92,7 @@ def main():
 
         for epoch in range(args.num_epochs):
             # decay beta over epochs
-            beta = 1 / np.cbrt(epoch + 1)
+            beta = min(2 / np.sqrt(epoch + 1), 1)
 
             print('epoch', epoch, 'beta', beta)
 
