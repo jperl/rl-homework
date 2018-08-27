@@ -62,7 +62,6 @@ def main():
     parser.add_argument('--num_epochs', type=int, default=20)
     parser.add_argument('--num_rollouts', type=int, default=20)
     parser.add_argument('--render', action='store_true')
-    parser.add_argument('--train_epochs', type=int, default=1)
     args = parser.parse_args()
 
     print('loading and building expert policy')
@@ -78,11 +77,11 @@ def main():
         actions_shape = expert_data['actions'].shape
         print('actions', actions_shape)
 
-        # train on the observations
-        observations, actions = expert_data['observations'].tolist(), expert_data['actions'].tolist()
         model = build_model(num_actions=actions_shape[-1])
 
-        model.fit(np.array(observations), np.array(actions)[:, 0, :], epochs=args.train_epochs)
+        # train on the observations
+        observations, actions = expert_data['observations'][:2500].tolist(), expert_data['actions'][:2500].tolist()
+        model.fit(np.array(observations), np.array(actions)[:, 0, :])
 
         import gym
         env = gym.make(args.envname)
@@ -93,37 +92,30 @@ def main():
 
         for epoch in range(args.num_epochs):
             # decay beta over epochs
-            beta = 1 / np.sqrt(epoch + 1)
+            beta = 1 / np.cbrt(epoch + 1)
 
             print('epoch', epoch, 'beta', beta)
 
-            for i in range(args.num_rollouts):
-                obs = env.reset()
-                done = False
-                steps = 0
+            obs = env.reset()
+            done = False
+            while not done:
+                use_policy = np.random.choice(2, p=[beta, 1 - beta])
 
-                while not done:
-                    use_policy = np.random.choice(2, p=[beta, 1 - beta])
+                if use_policy:
+                  action = model.predict(np.expand_dims(obs, 0))
+                else:
+                  # use expert
+                  action = expert_policy_fn(obs[None,:])
+                  observations.append(obs)
+                  actions.append(action)
 
-                    if use_policy:
-                      action = model.predict(np.expand_dims(obs, 0))
-                    else:
-                      # use expert
-                      action = expert_policy_fn(obs[None,:])
-                      observations.append(obs)
-                      actions.append(action)
+                obs, r, done, _ = env.step(action)
 
-                    obs, r, done, _ = env.step(action)
-
-                    steps += 1
-                    if args.render:
-                        env.render()
-                    # if steps % 100 == 0: print("%i/%i"%(steps, max_steps))
-                    if steps >= max_steps:
-                        break
+                if args.render:
+                    env.render()
 
             train_x, train_y = np.array(observations), np.array(actions)[:,0,:]
-            model.fit(train_x, train_y, epochs=args.train_epochs)
+            model.fit(train_x, train_y)
             rollout(args, env, model)
 
         rollout(args, env, model, True)
