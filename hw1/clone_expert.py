@@ -47,6 +47,7 @@ def main():
 
         # clone the observations
         observations, actions = expert_data['observations'], expert_data['actions']
+        print('actions', actions.shape)
         model = build_model(num_actions=actions.shape[-1])
         model.fit(observations, actions[:, 0, :], epochs=args.train_epochs)
 
@@ -78,9 +79,7 @@ def main():
 
 
         print('returns', returns)
-        print('mean return', np.mean(returns))
-        print('std of return', np.std(returns))
-
+        print('mean', np.mean(returns), 'std', np.std(returns))
 
 if __name__ == '__main__':
     main()
