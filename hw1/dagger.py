@@ -27,7 +27,7 @@ def build_model(num_actions):
     model.compile(optimizer='adam', loss='mean_absolute_error')
     return model
 
-def rollout(args, env, model):
+def rollout(args, env, model, render=False):
     max_steps = args.max_timesteps or env.spec.timestep_limit
 
     returns = []
@@ -42,9 +42,9 @@ def rollout(args, env, model):
             obs, r, done, _ = env.step(action)
             totalr += r
             steps += 1
-            if args.render:
+            if render:
                 env.render()
-            if steps % 100 == 0: print("%i/%i"%(steps, max_steps))
+            # if steps % 100 == 0: print("%i/%i"%(steps, max_steps))
             if steps >= max_steps:
                 break
 
@@ -59,7 +59,7 @@ def main():
     parser.add_argument('expert_policy_file', type=str)
     parser.add_argument('envname', type=str)
     parser.add_argument("--max_timesteps", type=int)
-    parser.add_argument('--num_epochs', type=int, default=50)
+    parser.add_argument('--num_epochs', type=int, default=20)
     parser.add_argument('--num_rollouts', type=int, default=20)
     parser.add_argument('--render', action='store_true')
     parser.add_argument('--train_epochs', type=int, default=1)
@@ -90,6 +90,7 @@ def main():
 
         # aggregate more data per epoch
         returns = []
+
         for epoch in range(args.num_epochs):
             # decay beta over epochs
             beta = 1 / np.sqrt(epoch + 1)
@@ -117,12 +118,15 @@ def main():
                     steps += 1
                     if args.render:
                         env.render()
-                    if steps % 100 == 0: print("%i/%i"%(steps, max_steps))
+                    # if steps % 100 == 0: print("%i/%i"%(steps, max_steps))
                     if steps >= max_steps:
                         break
 
-            model.fit(np.array(observations)[-5000:], np.array(actions)[-5000:, 0, :], epochs=args.train_epochs)
+            train_x, train_y = np.array(observations), np.array(actions)[:,0,:]
+            model.fit(train_x, train_y, epochs=args.train_epochs)
             rollout(args, env, model)
+
+        rollout(args, env, model, True)
 
 
 if __name__ == '__main__':
