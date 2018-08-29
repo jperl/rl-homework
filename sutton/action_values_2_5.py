@@ -20,6 +20,12 @@ alpha = 0.1
 Q_avg = np.zeros(10)
 Q_const = np.zeros(10)
 
+rewards_from_avg = []
+rewards_from_const = []
+
+avg_is_optimal = []
+const_is_optimal = []
+
 for n in range(1, int(1e4 + 1)):
   # random walk q*
   q_star += np.random.normal(0, 0.01, 10)
@@ -38,3 +44,12 @@ for n in range(1, int(1e4 + 1)):
 
   # use constant update
   Q_const[const_i] = Q_const[const_i] + (alpha * (q_star[const_i] - Q_const[const_i]))
+
+  # store sample reward
+  rewards_from_avg.append(q_star[avg_i])
+  rewards_from_const.append(q_star[const_i])
+
+  # store sample is optimal
+  optimal_i = np.argmax(q_star)
+  avg_is_optimal.append(float(avg_i == optimal_i))
+  const_is_optimal.append(float(const_i == optimal_i))
