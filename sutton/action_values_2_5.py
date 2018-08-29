@@ -11,16 +11,21 @@ import numpy as np
 q_star = np.zeros(10)
 
 # e-greedy
-e = 0.1
+epsilon = 0.1
+
+# constant step size
+alpha = 0.1
 
 # Calculate action values
 Q_avg = np.zeros(10)
 Q_const = np.zeros(10)
 
-for n in range(1, 1e4 + 1):
-  is_greedy = np.random.choice(2, p=[e, 1 - e])
+for n in range(1, int(1e4 + 1)):
+  # random walk q*
+  q_star += np.random.normal(0, 0.01, 10)
 
   # select a sample index
+  is_greedy = np.random.choice(2, p=[epsilon, 1 - epsilon])
   if is_greedy:
     avg_i = np.argmax(Q_avg)
     const_i = np.argmax(Q_const)
@@ -29,7 +34,7 @@ for n in range(1, 1e4 + 1):
     const_i = np.random.choice(10)
 
   # average the sample value
-  Q_avg[avg_i] = Q_avg[avg_i] + (1 / n) * (q_star[avg_i] - Q_avg[avg_i])
+  Q_avg[avg_i] = Q_avg[avg_i] + ((1 / n) * (q_star[avg_i] - Q_avg[avg_i]))
 
-  # random walk q*
-  q_star += np.random.normal(0, 0.01, 10)
+  # use constant update
+  Q_const[const_i] = Q_const[const_i] + (alpha * (q_star[const_i] - Q_const[const_i]))
