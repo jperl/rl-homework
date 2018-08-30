@@ -16,6 +16,9 @@ def run(epsilon = 0.1, alpha = 0.1, num_steps = 10000):
   Q_avg = np.zeros(10)
   Q_const = np.zeros(10)
 
+  # Track number of times an action is sampled to properly average
+  N_avg = np.zeros(10)
+
   rewards_from_avg, rewards_from_const, avg_is_optimal, const_is_optimal = [], [], [], []
 
   for n in range(1, num_steps + 1):
@@ -32,7 +35,8 @@ def run(epsilon = 0.1, alpha = 0.1, num_steps = 10000):
       const_i = np.random.choice(10)
 
     # average the sample value
-    Q_avg[avg_i] = Q_avg[avg_i] + ((1 / n) * (q_star[avg_i] - Q_avg[avg_i]))
+    N_avg[avg_i] += 1
+    Q_avg[avg_i] = Q_avg[avg_i] + ((1 / N_avg[avg_i]) * (q_star[avg_i] - Q_avg[avg_i]))
 
     # use constant update
     Q_const[const_i] = Q_const[const_i] + (alpha * (q_star[const_i] - Q_const[const_i]))
@@ -66,18 +70,14 @@ const_is_optimal = np.array(const_is_optimal)
 
 df = pd.DataFrame()
 df['average'] = rewards_from_avg.mean(axis=0)
-# df['average'] = df['average'].rolling(20).mean()
 df['constant'] = rewards_from_const.mean(axis=0)
-# df['constant'] = df['constant'].rolling(20).mean()
 ax = df.plot()
 fig = ax.get_figure()
-fig.savefig('../output/sutton_2.5_avg_reward.png')
+fig.savefig('./output/sutton_2.5_avg_reward.png')
 
 df = pd.DataFrame()
 df['average'] = avg_is_optimal.mean(axis=0)
-# df['average'] = df['average'].rolling(20).mean()
 df['constant'] = const_is_optimal.mean(axis=0)
-# df['constant'] = df['constant'].rolling(20).mean()
 ax = df.plot()
 fig = ax.get_figure()
-fig.savefig('../output/sutton_2.5_optimal.png')
+fig.savefig('./output/sutton_2.5_optimal.png')
