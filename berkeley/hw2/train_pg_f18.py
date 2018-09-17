@@ -101,14 +101,14 @@ class Agent(object):
                 sy_ac_na: placeholder for actions
                 sy_adv_n: placeholder for advantages
         """
-        raise NotImplementedError
         sy_ob_no = tf.placeholder(shape=[None, self.ob_dim], name="ob", dtype=tf.float32)
         if self.discrete:
             sy_ac_na = tf.placeholder(shape=[None], name="ac", dtype=tf.int32)
         else:
             sy_ac_na = tf.placeholder(shape=[None, self.ac_dim], name="ac", dtype=tf.float32)
-        # YOUR CODE HERE
-        sy_adv_n = None
+
+        sy_adv_n =  tf.placeholder(shape=[None], name="adv", dtype=tf.float32)
+
         return sy_ob_no, sy_ac_na, sy_adv_n
 
 
