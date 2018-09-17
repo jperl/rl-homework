@@ -181,8 +181,8 @@ class Agent(object):
             sy_sampled_ac = tf.multinomial(sy_logits_na, 1)
             sy_sampled_ac = tf.squeeze(sy_sampled_ac) # (batch_size, 1) -> (batch_size,)
         else:
-            batch_size = tf.shape(sy_mean)[0]
             sy_mean, sy_logstd = policy_parameters
+            batch_size = tf.shape(sy_mean)[0]
             z = tf.random_normal((batch_size, self.ac_dim))
             sy_sampled_ac = sy_mean + sy_logstd * z
 
@@ -214,15 +214,21 @@ class Agent(object):
                 For the discrete case, use the log probability under a categorical distribution.
                 For the continuous case, use the log probability under a multivariate gaussian.
         """
-        raise NotImplementedError
+        # SEE https://youtu.be/XGmd3wcyDg8?list=PLkFD6_40KJIxJMR-j5A1mkxK26gh_qg37&t=4137
         if self.discrete:
+            # cross entropy loss is the log probability for a categorical distribution
             sy_logits_na = policy_parameters
-            # YOUR_CODE_HERE
-            sy_logprob_n = None
+            sy_logprob_n = tf.nn.softmax_cross_entropy_with_logits_v2(labels=sy_ac_na, logits=sy_logits_na)
         else:
             sy_mean, sy_logstd = policy_parameters
-            # YOUR_CODE_HERE
-            sy_logprob_n = None
+
+            # calculate the probability of the sampled actions under the policy
+            dist = tf.distributions.Normal(sy_mean, sy_logstd)
+            probabilities = dist.pdf(sy_ac_na)
+
+            # mean squared error is the log probability under a gaussian
+            sy_logprob_n = tf.losses.mean_squared_error(labels=sy_ac_na, predictions=probabilities)
+
         return sy_logprob_n
 
     def build_computation_graph(self):
@@ -263,7 +269,10 @@ class Agent(object):
         #                           ----------PROBLEM 2----------
         # Loss Function and Training Operation
         #========================================================================================#
-        loss = None # YOUR CODE HERE
+        weighted_negative_likelihoods = tf.multiply(self.sy_logprob_n, self.sy_adv_n)
+        # the negative likelihoods are the correct sign because
+        # as we do gradient descent we will increase their likelihood proportional to the advantage
+        loss = tf.reduce_mean(weighted_negative_likelihoods)
         self.update_op = tf.train.AdamOptimizer(self.learning_rate).minimize(loss)
 
         #========================================================================================#
