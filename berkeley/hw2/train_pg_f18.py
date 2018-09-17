@@ -140,15 +140,13 @@ class Agent(object):
                 Pass in self.n_layers for the 'n_layers' argument, and
                 pass in self.size for the 'size' argument.
         """
-        raise NotImplementedError
         if self.discrete:
-            # YOUR_CODE_HERE
-            sy_logits_na = None
+            sy_logits_na = build_mlp(sy_ob_no, self.ac_dim, "discrete_policy", self.n_layers, self.size)
             return sy_logits_na
         else:
-            # YOUR_CODE_HERE
-            sy_mean = None
-            sy_logstd = None
+            # TODO output activation?
+            sy_mean = build_mlp(sy_ob_no, self.ac_dim, "continuous_policy_mean", self.n_layers, self.size)
+            sy_logstd = tf.Variable(0.25., name="continuous_policy_std")
             return (sy_mean, sy_logstd)
 
     #========================================================================================#
@@ -178,15 +176,16 @@ class Agent(object):
 
                  This reduces the problem to just sampling z. (Hint: use tf.random_normal!)
         """
-        raise NotImplementedError
         if self.discrete:
             sy_logits_na = policy_parameters
-            # YOUR_CODE_HERE
-            sy_sampled_ac = None
+            sy_sampled_ac = tf.multinomial(sy_logits_na, 1)
+            sy_sampled_ac = tf.squeeze(sy_sampled_ac) # (batch_size, 1) -> (batch_size,)
         else:
+            batch_size = tf.shape(sy_mean)[0]
             sy_mean, sy_logstd = policy_parameters
-            # YOUR_CODE_HERE
-            sy_sampled_ac = None
+            z = tf.random_normal((batch_size, self.ac_dim))
+            sy_sampled_ac = sy_mean + sy_logstd * z
+
         return sy_sampled_ac
 
     #========================================================================================#
