@@ -146,7 +146,7 @@ class Agent(object):
         else:
             # TODO output activation?
             sy_mean = build_mlp(sy_ob_no, self.ac_dim, "continuous_policy_mean", self.n_layers, self.size)
-            sy_logstd = tf.Variable(0.25., name="continuous_policy_std")
+            sy_logstd = tf.Variable(0.25, [self.ac_dim], name="continuous_policy_std")
             return (sy_mean, sy_logstd)
 
     #========================================================================================#
@@ -184,7 +184,8 @@ class Agent(object):
             sy_mean, sy_logstd = policy_parameters
             batch_size = tf.shape(sy_mean)[0]
             z = tf.random_normal((batch_size, self.ac_dim))
-            sy_sampled_ac = sy_mean + sy_logstd * z
+            sy_std = tf.exp(sy_logstd)
+            sy_sampled_ac = sy_mean + sy_std * z
 
         return sy_sampled_ac
 
@@ -216,9 +217,10 @@ class Agent(object):
         """
         # SEE https://youtu.be/XGmd3wcyDg8?list=PLkFD6_40KJIxJMR-j5A1mkxK26gh_qg37&t=4137
         if self.discrete:
-            # cross entropy loss is the log probability for a categorical distribution
+            # cross entropy loss will maximize the log probability for a categorical distribution
             sy_logits_na = policy_parameters
-            sy_logprob_n = tf.nn.softmax_cross_entropy_with_logits_v2(labels=sy_ac_na, logits=sy_logits_na)
+            labels = tf.one_hot(sy_ac_na, self.ac_dim)
+            sy_logprob_n = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=sy_logits_na)
         else:
             sy_mean, sy_logstd = policy_parameters
 
@@ -226,7 +228,7 @@ class Agent(object):
             dist = tf.distributions.Normal(sy_mean, sy_logstd)
             probabilities = dist.pdf(sy_ac_na)
 
-            # mean squared error is the log probability under a gaussian
+            # mean squared error will maximize the log probability for a gaussian
             sy_logprob_n = tf.losses.mean_squared_error(labels=sy_ac_na, predictions=probabilities)
 
         return sy_logprob_n
@@ -320,8 +322,8 @@ class Agent(object):
             #====================================================================================#
             #                           ----------PROBLEM 3----------
             #====================================================================================#
-            raise NotImplementedError
-            ac = None # YOUR CODE HERE
+            ac = self.sess.run(self.sy_sampled_ac, { self.sy_ob_no: [ob] })
+            print('AC', ac)
             ac = ac[0]
             acs.append(ac)
             ob, rew, done, _ = env.step(ac)
@@ -403,11 +405,37 @@ class Agent(object):
             Store the Q-values for all timesteps and all trajectories in a variable 'q_n',
             like the 'ob_no' and 'ac_na' above.
         """
-        # YOUR_CODE_HERE
+        q_n = []
+
         if self.reward_to_go:
-            raise NotImplementedError
+            for re_path in re_n:
+                # per path calculate the estimated rewards for the trajectory
+                path_est = []
+
+                # per time step in the path calculate the reward to go
+                for i, re in enumerate(re_path):
+                    # ex. len(5) - 0 = 5
+                    reward_to_go_len = len(re_path) - i
+                    gamma = np.power(self.gamma, np.arange(reward_to_go_len))
+                    re_to_go = np.sum(gamma * re_path[t:])
+                    path_est.append(re_to_go)
+
+                # append the path's array of estimated returns
+                q_n.append(np.array(path_est))
+
         else:
-            raise NotImplementedError
+            for re_path in re_n:
+                tprime_minus_one = np.arange(len(re_path))
+                gamma = np.power(self.gamma, tprime_minus_one)
+                re_discount = re_path * gamma
+                # all rewards are the same, so duplicate the sum per timestep
+                path_est = np.sum(re_discount) * np.ones_like(re_path)
+
+                # append the path's array of estimated returns
+                q_n.append(path_est)
+
+        q_n = np.concatenate(q_n)
+
         return q_n
 
     def compute_advantage(self, ob_no, q_n):
@@ -474,8 +502,7 @@ class Agent(object):
         if self.normalize_advantages:
             # On the next line, implement a trick which is known empirically to reduce variance
             # in policy gradient methods: normalize adv_n to have mean zero and std=1.
-            raise NotImplementedError
-            adv_n = None # YOUR_CODE_HERE
+            adv_n = (adv_n - np.mean(adv_n)) / np.std(adv_n)
         return q_n, adv_n
 
     def update_parameters(self, ob_no, ac_na, q_n, adv_n):
@@ -526,7 +553,7 @@ class Agent(object):
         # and after an update, and then log them below.
 
         # YOUR_CODE_HERE
-        raise NotImplementedError
+        self.sess.run(self.update_op, { self.sy_ob_no: ob_no, self.sy_ac_na: ac_na, self.sy_adv_n: adv_n })
 
 
 def train_PG(
