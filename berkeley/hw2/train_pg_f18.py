@@ -146,7 +146,7 @@ class Agent(object):
             return sy_logits_na
         else:
             sy_mean = build_mlp(sy_ob_no, self.ac_dim, "continuous_policy_mean", self.n_layers, self.size)
-            sy_logstd = tf.Variable(0.25, [self.ac_dim], name="continuous_policy_std")
+            sy_logstd = tf.Variable(np.zeros(self.ac_dim), dtype=tf.float32, name="continuous_policy_std")
             return (sy_mean, sy_logstd)
 
     #========================================================================================#
@@ -225,11 +225,14 @@ class Agent(object):
             sy_mean, sy_logstd = policy_parameters
 
             # calculate the probability of the sampled actions under the policy
-            dist = tf.distributions.Normal(sy_mean, tf.exp(sy_logstd))
-            probabilities = dist.prob(sy_ac_na)
+            # dist = tf.distributions.Normal(sy_mean, tf.exp(sy_logstd))
+            # probabilities = dist.prob(sy_ac_na)
 
             # mean squared error will maximize the log probability for a gaussian
-            sy_logprob_n = tf.losses.mean_squared_error(labels=sy_ac_na, predictions=probabilities)
+            # sy_logprob_n = tf.losses.mean_squared_error(labels=sy_ac_na, predictions=probabilities)
+
+            dist = tf.contrib.distributions.MultivariateNormalDiag(loc=sy_mean, scale_diag=tf.exp(sy_logstd))
+            sy_logprob_n = -dist.log_prob(sy_ac_na)
 
         return sy_logprob_n
 
