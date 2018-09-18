@@ -24,3 +24,16 @@ Yes. The reward is more stable, especially when there is not advantage normaliza
 
 ![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/q7.png)
 
+# Q8
+
+![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/q8_bs_lr.png)
+
+1) How did the batch size and learning rate affect the performance?
+
+The learning rate had the largest affect on performance because all batch sizes of lr 0.02 outperformed all other lr / batch sizes.
+
+Then within lr 0.02 the performance increased with batch size.
+
+2) Provide a single plot plotting the learning curves for all four runs.
+
+![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/q8.png)
