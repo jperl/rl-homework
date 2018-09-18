@@ -217,22 +217,22 @@ class Agent(object):
         """
         # SEE https://youtu.be/XGmd3wcyDg8?list=PLkFD6_40KJIxJMR-j5A1mkxK26gh_qg37&t=4137
         if self.discrete:
-            # cross entropy loss will maximize the log probability for a categorical distribution
+            # use cross entropy loss to maximize the log probability for a categorical distribution
             sy_logits_na = policy_parameters
             labels = tf.one_hot(sy_ac_na, self.ac_dim)
             sy_logprob_n = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=sy_logits_na)
         else:
+            # use mean squared error to maximize the log probability for a gaussian
             sy_mean, sy_logstd = policy_parameters
 
-            # calculate the probability of the sampled actions under the policy
-            # dist = tf.distributions.Normal(sy_mean, tf.exp(sy_logstd))
-            # probabilities = dist.prob(sy_ac_na)
+            # calculate the z-score of the sampled actions under the policy
+            sy_z = (sy_ac_na - sy_mean) / tf.exp(sy_logstd)
 
-            # mean squared error will maximize the log probability for a gaussian
-            # sy_logprob_n = tf.losses.mean_squared_error(labels=sy_ac_na, predictions=probabilities)
+            # express the loss as a negative-likilihood, so when we minimize it
+            # it will maximize the likilihood by pushing z towards 0, the mean of the distribution
+            # ex. z=10, loss=50 --> z=1, loss=0.5 --> z=0, loss=0
+            sy_logprob_n = 0.5 * tf.reduce_sum(tf.square(sy_z), axis=1)
 
-            dist = tf.contrib.distributions.MultivariateNormalDiag(loc=sy_mean, scale_diag=tf.exp(sy_logstd))
-            sy_logprob_n = -dist.log_prob(sy_ac_na)
 
         return sy_logprob_n
 
