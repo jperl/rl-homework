@@ -83,6 +83,7 @@ class Agent(object):
 
     def init_tf_sess(self):
         tf_config = tf.ConfigProto(inter_op_parallelism_threads=1, intra_op_parallelism_threads=1)
+        tf_config.gpu_options.allow_growth = True # JON CHANGED TO FIX ISSUE
         self.sess = tf.Session(config=tf_config)
         self.sess.__enter__() # equivalent to `with self.sess:`
         tf.global_variables_initializer().run() #pylint: disable=E1101
@@ -225,7 +226,7 @@ class Agent(object):
             sy_mean, sy_logstd = policy_parameters
 
             # calculate the probability of the sampled actions under the policy
-            dist = tf.distributions.Normal(sy_mean, sy_logstd)
+            dist = tf.distributions.Normal(sy_mean, tf.exp(sy_logstd))
             probabilities = dist.pdf(sy_ac_na)
 
             # mean squared error will maximize the log probability for a gaussian
@@ -322,8 +323,7 @@ class Agent(object):
             #====================================================================================#
             #                           ----------PROBLEM 3----------
             #====================================================================================#
-            ac = self.sess.run(self.sy_sampled_ac, { self.sy_ob_no: [ob] })
-            print('AC', ac)
+            ac = self.sess.run([self.sy_sampled_ac], { self.sy_ob_no: np.expand_dims(ob, axis=0) })
             ac = ac[0]
             acs.append(ac)
             ob, rew, done, _ = env.step(ac)
@@ -417,7 +417,7 @@ class Agent(object):
                     # ex. len(5) - 0 = 5
                     reward_to_go_len = len(re_path) - i
                     gamma = np.power(self.gamma, np.arange(reward_to_go_len))
-                    re_to_go = np.sum(gamma * re_path[t:])
+                    re_to_go = np.sum(gamma * re_path[i:])
                     path_est.append(re_to_go)
 
                 # append the path's array of estimated returns
