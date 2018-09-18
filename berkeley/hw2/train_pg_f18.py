@@ -145,7 +145,6 @@ class Agent(object):
             sy_logits_na = build_mlp(sy_ob_no, self.ac_dim, "discrete_policy", self.n_layers, self.size)
             return sy_logits_na
         else:
-            # TODO output activation?
             sy_mean = build_mlp(sy_ob_no, self.ac_dim, "continuous_policy_mean", self.n_layers, self.size)
             sy_logstd = tf.Variable(0.25, [self.ac_dim], name="continuous_policy_std")
             return (sy_mean, sy_logstd)
@@ -180,7 +179,7 @@ class Agent(object):
         if self.discrete:
             sy_logits_na = policy_parameters
             sy_sampled_ac = tf.multinomial(sy_logits_na, 1)
-            sy_sampled_ac = tf.squeeze(sy_sampled_ac) # (batch_size, 1) -> (batch_size,)
+            sy_sampled_ac = sy_sampled_ac[:,0] # (batch_size, 1) -> (batch_size,)
         else:
             sy_mean, sy_logstd = policy_parameters
             batch_size = tf.shape(sy_mean)[0]
@@ -227,7 +226,7 @@ class Agent(object):
 
             # calculate the probability of the sampled actions under the policy
             dist = tf.distributions.Normal(sy_mean, tf.exp(sy_logstd))
-            probabilities = dist.pdf(sy_ac_na)
+            probabilities = dist.prob(sy_ac_na)
 
             # mean squared error will maximize the log probability for a gaussian
             sy_logprob_n = tf.losses.mean_squared_error(labels=sy_ac_na, predictions=probabilities)
@@ -323,7 +322,7 @@ class Agent(object):
             #====================================================================================#
             #                           ----------PROBLEM 3----------
             #====================================================================================#
-            ac = self.sess.run([self.sy_sampled_ac], { self.sy_ob_no: np.expand_dims(ob, axis=0) })
+            ac = self.sess.run(self.sy_sampled_ac, { self.sy_ob_no: np.expand_dims(ob, axis=0) })
             ac = ac[0]
             acs.append(ac)
             ob, rew, done, _ = env.step(ac)
