@@ -14,3 +14,11 @@ Before doing anything, first replace `gym/envs/box2d/lunar_lander.py` with the p
 The only file that you need to look at is `train_pg_f18.py`, which you will implement.
 
 See the [HW2 PDF](http://rail.eecs.berkeley.edu/deeprlcourse/static/homeworks/hw2.pdf) for further instructions.
+
+# Debugging
+
+Error `AttributeError: module '_Box2D' has no attribute 'RAND_LIMIT_swigconstant'`, [run this](https://github.com/openai/gym/issues/647#issuecomment-349847199):
+
+```
+pip3 install box2d box2d-kengz
+```
