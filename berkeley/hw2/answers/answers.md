@@ -1,5 +1,9 @@
 # Q4
 
+![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/sb_cartpole.png)
+
+![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/lb_cartpole.png)
+
 1) Which gradient estimator has better performance without advantage-centering— the trajectory-centric one, or the one using reward-to-go?
 
 Reward-to-go. It has the higher performance both with and without advantage normalization.
