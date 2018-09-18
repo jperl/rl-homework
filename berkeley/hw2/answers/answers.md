@@ -18,6 +18,9 @@ Yes. The reward is more stable, especially when there is not advantage normaliza
 
 # Q5
 
-Params in [q5.sh](https://github.com/jperl/rl-homework/blob/master/berkeley/hw2/q5.sh)
-
 ![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/q5.png)
+
+# Q7
+
+![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/q7.png)
+
