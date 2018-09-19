@@ -542,7 +542,7 @@ class Agent(object):
             # Hint #bl2: Instead of trying to target raw Q-values directly, rescale the
             # targets to have mean zero and std=1. (Goes with Hint #bl1 in
             # Agent.compute_advantage.)
-            target_n = (adv_n - adv_n.mean()) / adv_n.std()
+            target_n = (q_n - q_n.mean()) / q_n.std()
             self.sess.run(self.baseline_update_op, { self.sy_ob_no: ob_no, self.sy_target_n: target_n })
 
         #====================================================================================#
