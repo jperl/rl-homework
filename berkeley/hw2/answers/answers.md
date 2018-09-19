@@ -1,3 +1,16 @@
+# Q1
+
+The law of iterated expectations is: the expectation of a conditional expectation, is the same as the unconditional expectation.
+
+So you can break apart the expectation of the policy trajectory, to the expectation of the expectation of the state-action marginal times the trajectory conditioned on (s, a).
+
+![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/q1_unconditioned.jpg)
+
+![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/q1.jpg)
+
+b) It is the same because in the law of iterated expectations --- the expectation of a conditional expectation, is the same as the unconditional expectation. Which will be the p theta expectation which will equal 1 since it is a distribution.
+
+
 # Q4
 
 ![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/q4_sb_cartpole.png)
