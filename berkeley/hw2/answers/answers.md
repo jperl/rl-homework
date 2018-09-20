@@ -10,7 +10,6 @@ So you can break apart the expectation of the policy trajectory, to the expectat
 
 b) It is the same because in the law of iterated expectations --- the expectation of a conditional expectation, is the same as the unconditional expectation. Which will be the p theta expectation which will equal 1 since it is a distribution.
 
-
 # Q4
 
 ![](https://raw.githubusercontent.com/jperl/rl-homework/master/berkeley/hw2/answers/q4_sb_cartpole.png)
