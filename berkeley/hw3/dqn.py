@@ -157,8 +157,23 @@ class QLearner(object):
     # Older versions of TensorFlow may require using "VARIABLES" instead of "GLOBAL_VARIABLES"
     # Tip: use huber_loss (from dqn_utils) instead of squared error when defining self.total_error
     ######
-
     # YOUR CODE HERE
+
+    # Formula from "classic deep learning" in http://rail.eecs.berkeley.edu/deeprlcourse/static/slides/lec-8.pdf slide
+    q_t = q_func(self.obs_t_ph, self.num_actions, scope="q")
+
+    # select the corresponding action from q_t for yhat
+    row_indices = tf.range(tf.shape(self.act_t_ph)[0])
+    action_indices = tf.stack([row_indices, self.act_t_ph], axis=1)
+    yhat = tf.gather_nd(q_t, action_indices)
+
+    qtarget_tp1 = q_func(self.obs_tp1_ph, self.num_actions, scope="q_target")
+    y = self.rew_t_ph + gamma * tf.reduce_max(qtarget_tp1, axis=-1)
+
+    q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q")
+    target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q_target")
+
+    total_error = tf.losses.mean_squared_error(labels=y, predictions=yhat)
 
     ######
 
@@ -229,6 +244,17 @@ class QLearner(object):
     #####
 
     # YOUR CODE HERE
+
+    # Here, your code needs to store this observation and its outcome (reward, next observation, etc.) into
+    # the replay buffer while stepping the simulator forward one step.
+    obs, reward, done, info = env.step(action)
+
+    # Don't forget to include epsilon greedy exploration!
+
+    # TODO if done
+    # obs = env.reset()
+
+    self.last_obs
 
   def update_model(self):
     ### 3. Perform experience replay and train the network.

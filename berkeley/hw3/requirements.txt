@@ -2,7 +2,8 @@ gym==0.10.5
 gym[atari]
 box2d
 mujoco-py==1.50.1.56
-tensorflow
+# from https://github.com/yaroslavvb/tensorflow-community-wheels/issues/77
+https://github.com/evdcush/TensorFlow-wheels/releases/download/tf-1.10.0-gpu-9.2-tensorrt-mkl/tensorflow-1.10.0-cp36-cp36m-linux_x86_64.whl
 numpy
 seaborn
 opencv-python
