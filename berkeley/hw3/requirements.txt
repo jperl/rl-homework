@@ -7,3 +7,6 @@ https://github.com/evdcush/TensorFlow-wheels/releases/download/tf-1.10.0-gpu-9.2
 numpy
 seaborn
 opencv-python
+
+# fixes issue https://github.com/openai/gym/issues/100#issuecomment-220854096
+box2d-py
