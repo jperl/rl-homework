@@ -175,7 +175,7 @@ class QLearner(object):
 
     # total_error = tf.losses.mean_squared_error(labels=y, predictions=yhat)
     # TODO ??
-    total_error = huber_loss(yhat - y)
+    self.total_error = huber_loss(yhat - y)
 
     ######
 
@@ -246,32 +246,36 @@ class QLearner(object):
     #####
     # YOUR CODE HERE
 
-    # encode t observation batch
-    self.obs_t_batch = self.replay_buffer.encode_recent_observation()
+    # store the last observation
+    idx = self.replay_buffer.store_frame(self.last_obs)
 
-    # e-greedy exploration
+    # take random actions until we have initialized the model
     epsilon = 0.05
-    if np.random.rand() < epsilon:
+    if not self.model_initialized or (np.random.rand() < epsilon):
       # explore randomly
-      action = np.randint(0, self.num_actions)
+      action = np.random.randint(0, self.num_actions)
     else:
       # exploit the action with the highest q value
-      q_vals = self.session.run(self.q_t, { feed_dict={ self.obs_t_ph: self.obs_t_batch }})
+      obs_t_batch = self.replay_buffer.encode_recent_observation()
+
+      print('obs_t_batch SHAPE', np.expand_dims(obs_t_batch, 0).shape)
+      q_vals = self.session.run(self.q_t, feed_dict={ self.obs_t_ph: np.expand_dims(obs_t_batch, 0) })
+
+      print('q_vals', q_vals.shape)
+      print('q_vals', q_vals)
+
       action = np.argmax(q_vals[-1])
+      print('action', action)
 
-    obs, reward, done, info = env.step(action)
+    obs, reward, done, info = self.env.step(action)
     if done:
-      obs = env.reset()
-
-    self.last_obs = obs
+      obs = self.env.reset()
 
     # store the effect of the latest observation
-    idx = self.replay_buffer.store_frame(self.last_obs)
     self.replay_buffer.store_effect(idx, action, reward, done)
 
-    # encode t+1 observation batch
-    self.obs_tp1_batch = self.replay_buffer.encode_recent_observation()
-
+    # update last observation to new observation
+    self.last_obs = obs
 
 
   def update_model(self):
@@ -324,12 +328,12 @@ class QLearner(object):
       if not self.model_initialized:
         # TODO why does this need the feed_dict??
         initialize_interdependent_variables(self.session, tf.global_variables(), {
-            self.obs_t_ph: self.obs_t_batch,
-            self.obs_tp1_ph: self.obs_tp1_batch,
+            self.obs_t_ph: obs_batch,
+            self.obs_tp1_ph: next_obs_batch,
         })
         self.model_initialized = True
 
-      self.sess.run(self.train_fn, feed_dict={self.obs_t_ph: obs_batch, self.act_t_ph: act_batch, self.rew_t_ph: rew_batch, self.obs_tp1_ph: next_obs_batch, self.done_mask_ph: done_mask })
+      self.session.run(self.train_fn, feed_dict={self.obs_t_ph: obs_batch, self.act_t_ph: act_batch, self.rew_t_ph: rew_batch, self.obs_tp1_ph: next_obs_batch, self.done_mask_ph: done_mask })
 
       if self.num_param_updates % self.target_update_freq == 0:
         self.session.run(self.update_target_fn)
