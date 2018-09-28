@@ -258,14 +258,8 @@ class QLearner(object):
       # exploit the action with the highest q value
       obs_t_batch = self.replay_buffer.encode_recent_observation()
 
-      print('obs_t_batch SHAPE', np.expand_dims(obs_t_batch, 0).shape)
       q_vals = self.session.run(self.q_t, feed_dict={ self.obs_t_ph: np.expand_dims(obs_t_batch, 0) })
-
-      print('q_vals', q_vals.shape)
-      print('q_vals', q_vals)
-
       action = np.argmax(q_vals[-1])
-      print('action', action)
 
     obs, reward, done, info = self.env.step(action)
     if done:
@@ -333,7 +327,14 @@ class QLearner(object):
         })
         self.model_initialized = True
 
-      self.session.run(self.train_fn, feed_dict={self.obs_t_ph: obs_batch, self.act_t_ph: act_batch, self.rew_t_ph: rew_batch, self.obs_tp1_ph: next_obs_batch, self.done_mask_ph: done_mask })
+      self.session.run(self.train_fn, feed_dict={
+        self.obs_t_ph: obs_batch,
+        self.act_t_ph: act_batch,
+        self.rew_t_ph: rew_batch,
+        self.obs_tp1_ph: next_obs_batch,
+        self.done_mask_ph: done_mask,
+        self.learning_rate: self.optimizer_spec.lr_schedule.value(self.num_param_updates),
+      })
 
       if self.num_param_updates % self.target_update_freq == 0:
         self.session.run(self.update_target_fn)
