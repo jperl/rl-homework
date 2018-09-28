@@ -160,12 +160,12 @@ class QLearner(object):
     # YOUR CODE HERE
 
     # Formula from "classic deep learning" in http://rail.eecs.berkeley.edu/deeprlcourse/static/slides/lec-8.pdf slide
-    q_t = q_func(self.obs_t_ph, self.num_actions, scope="q")
+    self.q_t = q_func(self.obs_t_ph, self.num_actions, scope="q")
 
     # select the corresponding action from q_t for yhat
     row_indices = tf.range(tf.shape(self.act_t_ph)[0])
     action_indices = tf.stack([row_indices, self.act_t_ph], axis=1)
-    yhat = tf.gather_nd(q_t, action_indices)
+    yhat = tf.gather_nd(self.q_t, action_indices)
 
     qtarget_tp1 = q_func(self.obs_tp1_ph, self.num_actions, scope="q_target")
     y = self.rew_t_ph + gamma * tf.reduce_max(qtarget_tp1, axis=-1)
@@ -173,7 +173,9 @@ class QLearner(object):
     q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q")
     target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q_target")
 
-    total_error = tf.losses.mean_squared_error(labels=y, predictions=yhat)
+    # total_error = tf.losses.mean_squared_error(labels=y, predictions=yhat)
+    # TODO ??
+    total_error = huber_loss(yhat - y)
 
     ######
 
@@ -242,19 +244,35 @@ class QLearner(object):
     # might as well be random, since you haven't trained your net...)
 
     #####
-
     # YOUR CODE HERE
 
-    # Here, your code needs to store this observation and its outcome (reward, next observation, etc.) into
-    # the replay buffer while stepping the simulator forward one step.
+    # encode t observation batch
+    self.obs_t_batch = self.replay_buffer.encode_recent_observation()
+
+    # e-greedy exploration
+    epsilon = 0.05
+    if np.random.rand() < epsilon:
+      # explore randomly
+      action = np.randint(0, self.num_actions)
+    else:
+      # exploit the action with the highest q value
+      q_vals = self.session.run(self.q_t, { feed_dict={ self.obs_t_ph: self.obs_t_batch }})
+      action = np.argmax(q_vals[-1])
+
     obs, reward, done, info = env.step(action)
+    if done:
+      obs = env.reset()
 
-    # Don't forget to include epsilon greedy exploration!
+    self.last_obs = obs
 
-    # TODO if done
-    # obs = env.reset()
+    # store the effect of the latest observation
+    idx = self.replay_buffer.store_frame(self.last_obs)
+    self.replay_buffer.store_effect(idx, action, reward, done)
 
-    self.last_obs
+    # encode t+1 observation batch
+    self.obs_tp1_batch = self.replay_buffer.encode_recent_observation()
+
+
 
   def update_model(self):
     ### 3. Perform experience replay and train the network.
@@ -300,6 +318,21 @@ class QLearner(object):
       #####
 
       # YOUR CODE HERE
+
+      obs_batch, act_batch, rew_batch, next_obs_batch, done_mask = self.replay_buffer.sample(self.batch_size)
+
+      if not self.model_initialized:
+        # TODO why does this need the feed_dict??
+        initialize_interdependent_variables(self.session, tf.global_variables(), {
+            self.obs_t_ph: self.obs_t_batch,
+            self.obs_tp1_ph: self.obs_tp1_batch,
+        })
+        self.model_initialized = True
+
+      self.sess.run(self.train_fn, feed_dict={self.obs_t_ph: obs_batch, self.act_t_ph: act_batch, self.rew_t_ph: rew_batch, self.obs_tp1_ph: next_obs_batch, self.done_mask_ph: done_mask })
+
+      if self.num_param_updates % self.target_update_freq == 0:
+        self.session.run(self.update_target_fn)
 
       self.num_param_updates += 1
 
