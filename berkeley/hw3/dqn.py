@@ -160,7 +160,7 @@ class QLearner(object):
     # YOUR CODE HERE
 
     # Formula from "classic deep learning" in http://rail.eecs.berkeley.edu/deeprlcourse/static/slides/lec-8.pdf slide
-    self.q_t = q_func(self.obs_t_ph, self.num_actions, scope="q")
+    self.q_t = q_func(obs_t_float, self.num_actions, scope="q")
 
     # select the corresponding action from q_t for yhat
     row_indices = tf.range(tf.shape(self.act_t_ph)[0])
@@ -170,10 +170,10 @@ class QLearner(object):
     qtarget_tp1 = q_func(self.obs_tp1_ph, self.num_actions, scope="q_target")
     y = self.rew_t_ph + gamma * tf.reduce_max(qtarget_tp1, axis=-1) * (1. - self.done_mask_ph)
 
+    self.total_error = tf.reduce_mean(huber_loss(yhat - y))
+
     q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q")
     target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q_target")
-
-    self.total_error = huber_loss(yhat - y)
 
     ######
 
