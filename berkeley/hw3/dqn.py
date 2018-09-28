@@ -173,8 +173,7 @@ class QLearner(object):
     q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q")
     target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q_target")
 
-    # total_error = tf.losses.mean_squared_error(labels=y, predictions=yhat)
-    # TODO ??
+    # self.total_error = tf.losses.mean_squared_error(labels=y, predictions=yhat)
     self.total_error = huber_loss(yhat - y)
 
     ######
@@ -250,8 +249,8 @@ class QLearner(object):
     idx = self.replay_buffer.store_frame(self.last_obs)
 
     # take random actions until we have initialized the model
-    epsilon = 0.05
-    if not self.model_initialized or (np.random.rand() < epsilon):
+    explore = not self.model_initialized or (np.random.rand() < 0.01)
+    if explore:
       # explore randomly
       action = np.random.randint(0, self.num_actions)
     else:
@@ -265,7 +264,6 @@ class QLearner(object):
     if done:
       obs = self.env.reset()
 
-    # store the effect of the latest observation
     self.replay_buffer.store_effect(idx, action, reward, done)
 
     # update last observation to new observation
