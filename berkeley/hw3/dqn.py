@@ -173,7 +173,6 @@ class QLearner(object):
     q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q")
     target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q_target")
 
-    # self.total_error = tf.losses.mean_squared_error(labels=y, predictions=yhat)
     self.total_error = huber_loss(yhat - y)
 
     ######
@@ -249,7 +248,7 @@ class QLearner(object):
     idx = self.replay_buffer.store_frame(self.last_obs)
 
     # take random actions until we have initialized the model
-    explore = not self.model_initialized or (np.random.rand() < 0.01)
+    explore = not self.model_initialized or (np.random.rand() < self.exploration.value(self.t))
     if explore:
       # explore randomly
       action = np.random.randint(0, self.num_actions)
@@ -331,7 +330,7 @@ class QLearner(object):
         self.rew_t_ph: rew_batch,
         self.obs_tp1_ph: next_obs_batch,
         self.done_mask_ph: done_mask,
-        self.learning_rate: self.optimizer_spec.lr_schedule.value(self.num_param_updates),
+        self.learning_rate: self.optimizer_spec.lr_schedule.value(self.t),
       })
 
       if self.num_param_updates % self.target_update_freq == 0:
