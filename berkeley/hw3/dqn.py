@@ -168,7 +168,7 @@ class QLearner(object):
     yhat = tf.gather_nd(self.q_t, action_indices)
 
     qtarget_tp1 = q_func(self.obs_tp1_ph, self.num_actions, scope="q_target")
-    y = self.rew_t_ph + gamma * tf.reduce_max(qtarget_tp1, axis=-1)
+    y = self.rew_t_ph + gamma * tf.reduce_max(qtarget_tp1, axis=-1) * (1. - self.done_mask_ph)
 
     q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q")
     target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q_target")
