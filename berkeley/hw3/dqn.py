@@ -160,20 +160,21 @@ class QLearner(object):
     # YOUR CODE HERE
 
     # Formula from "classic deep learning" in http://rail.eecs.berkeley.edu/deeprlcourse/static/slides/lec-8.pdf slide
-    self.q_t = q_func(obs_t_float, self.num_actions, scope="q")
+    self.q_t = q_func(obs_t_float, self.num_actions, scope="q_func")
 
     # select the corresponding action from q_t for yhat
     row_indices = tf.range(tf.shape(self.act_t_ph)[0])
     action_indices = tf.stack([row_indices, self.act_t_ph], axis=1)
     yhat = tf.gather_nd(self.q_t, action_indices)
 
-    qtarget_tp1 = q_func(self.obs_tp1_ph, self.num_actions, scope="q_target")
-    y = self.rew_t_ph + gamma * tf.reduce_max(qtarget_tp1, axis=-1) * (1. - self.done_mask_ph)
+    q_target = q_func(self.obs_tp1_ph, self.num_actions, scope="target_q_func")
+    max_target_q_val = tf.reduce_max(q_target, axis=-1)
+    y = self.rew_t_ph + gamma * max_target_q_val * (1 - self.done_mask_ph)
 
     self.total_error = tf.reduce_mean(huber_loss(yhat - y))
 
-    q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q")
-    target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q_target")
+    q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "q_func")
+    target_q_func_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, "target_q_func")
 
     ######
 
@@ -248,10 +249,10 @@ class QLearner(object):
     idx = self.replay_buffer.store_frame(self.last_obs)
 
     # take random actions until we have initialized the model
-    explore = not self.model_initialized or (np.random.rand() < self.exploration.value(self.t))
+    explore = not self.model_initialized or (np.random.uniform() < self.exploration.value(self.t))
     if explore:
       # explore randomly
-      action = np.random.randint(0, self.num_actions)
+      action = self.env.action_space.sample()
     else:
       # exploit the action with the highest q value
       obs_t_batch = self.replay_buffer.encode_recent_observation()
