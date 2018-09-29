@@ -167,7 +167,7 @@ class QLearner(object):
     action_indices = tf.stack([row_indices, self.act_t_ph], axis=1)
     yhat = tf.gather_nd(self.q_t, action_indices)
 
-    q_target = q_func(self.obs_tp1_ph, self.num_actions, scope="target_q_func")
+    q_target = q_func(obs_tp1_float, self.num_actions, scope="target_q_func")
     max_target_q_val = tf.reduce_max(q_target, axis=-1)
     y = self.rew_t_ph + gamma * max_target_q_val * (1 - self.done_mask_ph)
 
