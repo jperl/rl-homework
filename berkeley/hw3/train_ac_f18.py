@@ -346,13 +346,13 @@ class Agent(object):
         # otherwise the values will grow without bound.
 
         # YOUR CODE HERE
-        v_sprime = self.session.run(self.critic_prediction, { self.sy_ob_no: next_ob_no })
+        v_sprime = self.sess.run(self.critic_prediction, { self.sy_ob_no: next_ob_no })
 
         # Q(s, a) = r(s, a) + gamma*V(s')
         q_val = re_n + (self.gamma * v_sprime) * (1. - terminal_n)
 
         # A(s, a) = Q(s, a) - V(s)
-        v_s = self.session.run(self.critic_prediction, { self.sy_ob_no: ob_no })
+        v_s = self.sess.run(self.critic_prediction, { self.sy_ob_no: ob_no })
         adv_n = q_val - v_s
 
         if self.normalize_advantages:
@@ -391,12 +391,12 @@ class Agent(object):
         # YOUR CODE HERE
 
         for _ in range(self.num_target_updates):
-          v_sprime = self.session.run(self.critic_prediction, { self.sy_ob_no: next_ob_no })
-          v_target = re_n + (self.gamma * v_sprime) * (1. - terminal_n)
-          v_s = self.session.run(self.critic_prediction, { self.sy_ob_no: ob_no })
+            v_sprime = self.sess.run(self.critic_prediction, { self.sy_ob_no: next_ob_no })
+            v_target = re_n + (self.gamma * v_sprime) * (1. - terminal_n)
+            v_s = self.sess.run(self.critic_prediction, { self.sy_ob_no: ob_no })
 
-          for _ in range(self.num_grad_steps_per_target_update):
-            sess.run(self.critic_update_op, { self.sy_target_n: v_target, self.critic_prediction: v_s })
+            for _ in range(self.num_grad_steps_per_target_update):
+                self.sess.run(self.critic_update_op, { self.sy_target_n: v_target, self.critic_prediction: v_s })
 
     def update_actor(self, ob_no, ac_na, adv_n):
         """
