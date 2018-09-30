@@ -387,8 +387,18 @@ class Agent(object):
         # by evaluating V(s') on the updated critic
         # Note: don't forget to use terminal_n to cut off the V(s') term when computing the target
         # otherwise the values will grow without bound.
+
         # YOUR CODE HERE
-        raise NotImplementedError
+        if self.steps % self.num_grad_steps_per_target_update steps != 0:
+           return
+
+        v_sprime = self.session.run(self.critic_prediction, { self.sy_ob_no: next_ob_no })
+        v_target = re_n + (self.gamma * v_sprime) * (1. - terminal_n)
+        v_s = self.session.run(self.critic_prediction, { self.sy_ob_no: ob_no })
+
+        n = self.num_grad_steps_per_target_update*self.num_target_updates
+        for _ in range(n):
+            sess.run(self.critic_update_op, { self.sy_target_n: v_target, self.critic_prediction: v_s })
 
     def update_actor(self, ob_no, ac_na, adv_n):
         """
