@@ -5,7 +5,7 @@ Adapted for CS294-112 Fall 2018 by Soroush Nasiriany, Sid Reddy, and Greg Kahn
 """
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
+# import tensorflow_probability as tfp
 import gym
 import logz
 import os
@@ -207,8 +207,7 @@ class Agent(object):
         if self.discrete:
             # use cross entropy loss to maximize the log probability for a categorical distribution
             sy_logits_na = policy_parameters
-            labels = tf.one_hot(sy_ac_na, self.ac_dim)
-            sy_logprob_n = -1 * tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=sy_logits_na)
+            sy_logprob_n = -1 * tf.nn.sparse_softmax_cross_entropy_with_logits(labels=sy_ac_na, logits=sy_logits_na)
         else:
             # use mean squared error to maximize the log probability for a gaussian
             sy_mean, sy_logstd = policy_parameters
