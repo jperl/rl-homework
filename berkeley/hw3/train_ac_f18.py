@@ -208,7 +208,7 @@ class Agent(object):
             # use cross entropy loss to maximize the log probability for a categorical distribution
             sy_logits_na = policy_parameters
             labels = tf.one_hot(sy_ac_na, self.ac_dim)
-            sy_logprob_n = tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=sy_logits_na)
+            sy_logprob_n = -1 * tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=sy_logits_na)
         else:
             # use mean squared error to maximize the log probability for a gaussian
             sy_mean, sy_logstd = policy_parameters
@@ -219,7 +219,7 @@ class Agent(object):
             # express the loss as a negative-likilihood, so when we minimize it
             # it will maximize the likilihood by pushing z towards 0, the mean of the distribution
             # ex. z=10, loss=50 --> z=1, loss=0.5 --> z=0, loss=0
-            sy_logprob_n = 0.5 * tf.reduce_mean(tf.square(sy_z), axis=1)
+            sy_logprob_n = -0.5 * tf.reduce_mean(tf.square(sy_z), axis=1)
 
         return sy_logprob_n
 
