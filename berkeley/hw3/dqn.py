@@ -163,12 +163,22 @@ class QLearner(object):
     self.q_t = q_func(obs_t_float, self.num_actions, scope="q_func")
 
     # select the corresponding action from q_t for yhat
-    row_indices = tf.range(tf.shape(self.act_t_ph)[0])
-    action_indices = tf.stack([row_indices, self.act_t_ph], axis=1)
-    yhat = tf.gather_nd(self.q_t, action_indices)
+    q_rows_idx = tf.range(tf.shape(self.act_t_ph)[0])
+    yhat = tf.gather_nd(self.q_t, tf.stack([q_rows_idx, self.act_t_ph], axis=1))
 
     q_target = q_func(obs_tp1_float, self.num_actions, scope="target_q_func")
-    max_target_q_val = tf.reduce_max(q_target, axis=-1)
+
+    if double_q:
+      # decorrelate the q-target error by re-using q to pick the max action
+      # and using q-target to get the value of that action
+      q_tp1 = q_func(obs_tp1_float, self.num_actions, scope="q_func", reuse=True)
+      tp1_max_act_idx = tf.argmax(q_tp1, axis=-1, output_type=tf.int32)
+    else:
+      tp1_max_act_idx = tf.argmax(q_target, axis=-1, output_type=tf.int32)
+
+    tp1_rows_idx = tf.range(tf.shape(tp1_max_act_idx)[0])
+    max_target_q_val = tf.gather_nd(q_target, tf.stack([tp1_rows_idx, tp1_max_act_idx], axis=1))
+
     y = self.rew_t_ph + gamma * max_target_q_val * (1 - self.done_mask_ph)
 
     self.total_error = tf.reduce_mean(huber_loss(yhat - y))
