@@ -220,7 +220,7 @@ class Agent(object):
             # express the loss as a negative-likilihood, so when we minimize it
             # it will maximize the likilihood by pushing z towards 0, the mean of the distribution
             # ex. z=10, loss=50 --> z=1, loss=0.5 --> z=0, loss=0
-            sy_logprob_n = 0.5 * tf.reduce_sum(tf.square(sy_z), axis=1)
+            sy_logprob_n = 0.5 * tf.reduce_mean(tf.square(sy_z), axis=1)
 
         return sy_logprob_n
 
@@ -301,17 +301,18 @@ class Agent(object):
             ob, rew, done, _ = env.step(ac)
             # add the observation after taking a step to next_obs
             # YOUR CODE HERE
-            raise NotImplementedError
+            next_obs.append(ob)
             rewards.append(rew)
             steps += 1
             # If the episode ended, the corresponding terminal value is 1
             # otherwise, it is 0
             # YOUR CODE HERE
             if done or steps > self.max_path_length:
-                raise NotImplementedError
+                terminals.append(1)
                 break
             else:
-                raise NotImplementedError
+                terminals.append(0)
+
         path = {"observation" : np.array(obs, dtype=np.float32),
                 "reward" : np.array(rewards, dtype=np.float32),
                 "action" : np.array(acs, dtype=np.float32),
@@ -344,9 +345,16 @@ class Agent(object):
         # and V(s) when subtracting the baseline
         # Note: don't forget to use terminal_n to cut off the V(s') term when computing Q(s, a)
         # otherwise the values will grow without bound.
+
         # YOUR CODE HERE
-        raise NotImplementedError
-        adv_n = None
+        v_sprime = self.session.run(self.critic_prediction, { self.sy_ob_no: next_ob_no })
+
+        # Q(s, a) = r(s, a) + gamma*V(s')
+        q_val = re_n + (self.gamma * v_sprime) * (1. - terminal_n)
+
+        # A(s, a) = Q(s, a) - V(s)
+        v_s = self.session.run(self.critic_prediction, { self.sy_ob_no: ob_no })
+        adv_n = q_val - v_s
 
         if self.normalize_advantages:
             # YOUR_HW2 CODE_HERE
