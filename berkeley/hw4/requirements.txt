@@ -1,3 +1,6 @@
 pandas
 matplotlib
 colorlog
+gym==0.10.5
+mujoco-py==1.50.1.56
+https://github.com/evdcush/TensorFlow-wheels/releases/download/tf-1.10.0-gpu-9.2-tensorrt-mkl/tensorflow-1.10.0-cp36-cp36m-linux_x86_64.whl
