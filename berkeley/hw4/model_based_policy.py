@@ -136,17 +136,25 @@ class ModelBasedPolicy(object):
         """
         ### PROBLEM 2
         ### YOUR CODE HERE
-        random_action_sequences = tf.random_uniform([self._num_random_action_selection, self._horizon], maxval=self._action_dim)
+        bs = self._num_random_action_selection
+        random_action_sequences = tf.random_uniform(shape=[bs, self._horizon, self._action_dim],
+                                                    minval=self._action_space_low,
+                                                    maxval=self._action_space_high)
+
+        cost = tf.zeros([bs])
+
+        # repeat the first state for each in batch
+        state_ph = tf.tile(state_ph[0:1, :], [bs, 1])
 
         for i in range(self._horizon):
-          actions = random_action_sequences[:, i]
+          actions = random_action_sequences[:, i, :]
           next_state_pred = self._dynamics_func(state_ph, actions, True)
-          cost = self._cost_fn(state_ph, actions, next_state_pred)
+          cost += self._cost_fn(state_ph, actions, next_state_pred)
           state_ph = next_state_pred
 
         best_sequence_index = tf.argmin(cost, axis=0)
-        best_action = random_action_sequences[best_sequence_index, 0]
 
+        best_action = random_action_sequences[best_sequence_index, 0, :]
         return best_action
 
     def _setup_graph(self):
