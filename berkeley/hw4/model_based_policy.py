@@ -72,7 +72,7 @@ class ModelBasedPolicy(object):
         state_normalized = utils.normalize(state, ds.state_mean, ds.state_std)
         action_normalized = utils.normalize(action, ds.action_mean, ds.action_std)
 
-        state_action = tf.concat([state_normalized, action_normalized])
+        state_action = tf.concat([state_normalized, action_normalized], axis=-1)
 
         next_state_z_delta = utils.build_mlp(state_action, self._state_dim, "dynamics", n_layers=self._nn_layers, reuse=reuse)
         next_state_delta = utils.unnormalize(next_state_z_delta, ds.state_mean, ds.state_std)
@@ -198,9 +198,9 @@ class ModelBasedPolicy(object):
         ### PROBLEM 1
         ### YOUR CODE HERE
         next_state_pred = self._sess.run(self._next_state_pred, feed_dict={
-          self._state_ph: state,
-          self._action_ph: action
-        })
+          self._state_ph: np.expand_dims(state, 0),
+          self._action_ph: np.expand_dims(action, 0)
+        })[0]
 
         assert np.shape(next_state_pred) == (self._state_dim,)
         return next_state_pred
