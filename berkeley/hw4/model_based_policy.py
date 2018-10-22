@@ -74,10 +74,10 @@ class ModelBasedPolicy(object):
 
         state_action = tf.concat([state_normalized, action_normalized], axis=-1)
 
-        next_state_z_delta = utils.build_mlp(state_action, self._state_dim, "dynamics", n_layers=self._nn_layers, reuse=reuse)
-        next_state_delta = utils.unnormalize(next_state_z_delta, ds.state_mean, ds.state_std)
-        next_state_pred = state + next_state_delta
+        next_state_delta_normalized = utils.build_mlp(state_action, self._state_dim, "dynamics", n_layers=self._nn_layers, reuse=reuse)
+        next_state_delta = utils.unnormalize(next_state_delta_normalized, ds.delta_state_mean, ds.delta_state_std)
 
+        next_state_pred = state + next_state_delta
         return next_state_pred
 
     def _setup_training(self, state_ph, next_state_ph, next_state_pred):
@@ -101,10 +101,9 @@ class ModelBasedPolicy(object):
         ### PROBLEM 1
         ### YOUR CODE HERE
         ds = self._init_dataset
-        y = utils.normalize(next_state_ph - state_ph, ds.state_mean, ds.state_std)
-        yhat = utils.normalize(next_state_pred - state_ph, ds.state_mean, ds.state_std)
-        loss = tf.losses.mean_squared_error(y, yhat)
-
+        y = utils.normalize((next_state_ph - state_ph), ds.delta_state_mean, ds.delta_state_std)
+        yhat = utils.normalize((next_state_pred - state_ph), ds.delta_state_mean, ds.delta_state_std)
+        loss = tf.losses.mean_squared_error(labels=y, predictions=yhat)
         train_op = tf.train.AdamOptimizer(learning_rate=self._learning_rate).minimize(loss)
         return loss, train_op
 
